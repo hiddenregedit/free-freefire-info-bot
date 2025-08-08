@@ -17,8 +17,8 @@ CONFIG_FILE = "info_channels.json"
 class InfoCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.api_url = "https://rawthug.onrender.com/info?uid={uid}"
-        self.generate_url = "https://rawthug.onrender.com/username?uid={uid}"
+        self.api_url = "https://glob-info2.vercel.app/info"
+        self.generate_url = "https://genprofile2.vercel.app/generate"
         self.session = aiohttp.ClientSession()
         self.config_data = self.load_config()
         self.cooldowns = {}
