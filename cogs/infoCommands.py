@@ -18,7 +18,7 @@ class InfoCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.api_url = "https://rawthug.onrender.com/info"
-        self.generate_url = "https://generatethug.onrender.com/generate"
+        self.generate_url = "https://generatethug.onrender.com/profile?uid={uid}"
         self.session = aiohttp.ClientSession()
         self.config_data = self.load_config()
         self.cooldowns = {}
