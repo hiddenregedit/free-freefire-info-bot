@@ -1,3 +1,4 @@
+
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -18,7 +19,7 @@ class InfoCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.api_url = "http://raw.thug4ff.com/info"
-        self.generate_url = "https://profile-generator.up.railway.app/api/profile?uid={uid}"
+        self.generate_url = "https://profile-generator.up.railway.app/api/profile"
         self.session = aiohttp.ClientSession()
         self.config_data = self.load_config()
         self.cooldowns = {}
@@ -244,14 +245,14 @@ class InfoCommands(commands.Cog):
                 if captain_info:
                     guild_info.extend([
                         "**└─ Leader Info**:",
-                        f"    **├─ Leader Name**: {captain_info.get('nickname', 'Not found')}",
-                        f"    **├─ Leader UID**: `{captain_info.get('accountId', 'Not found')}`",
-                        f"    **├─ Leader Level**: {captain_info.get('level', 'Not found')} (Exp: {captain_info.get('exp', '?')})",
-                        f"    **├─ Last Login**: {self.convert_unix_timestamp(int(captain_info.get('lastLoginAt', 'Not found')))}",
-                        f"    **├─ Title**: {captain_info.get('title', 'Not found')}",
-                        f"    **├─ BP Badges**: {captain_info.get('badgeCnt', '?')}",
-                        f"    **├─ BR Rank**: {'' if captain_info.get('showBrRank') else 'Not found'} {captain_info.get('rankingPoints', 'Not found')}",
-                        f"    **└─ CS Rank**: {'' if captain_info.get('showCsRank') else 'Not found'} {captain_info.get('csRankingPoints', 'Not found')} "
+                        f"    **├─ Leader Name**: {captain_info.get('nickname', 'Not found')}",
+                        f"    **├─ Leader UID**: `{captain_info.get('accountId', 'Not found')}`",
+                        f"    **├─ Leader Level**: {captain_info.get('level', 'Not found')} (Exp: {captain_info.get('exp', '?')})",
+                        f"    **├─ Last Login**: {self.convert_unix_timestamp(int(captain_info.get('lastLoginAt', 'Not found')))}",
+                        f"    **├─ Title**: {captain_info.get('title', 'Not found')}",
+                        f"    **├─ BP Badges**: {captain_info.get('badgeCnt', '?')}",
+                        f"    **├─ BR Rank**: {'' if captain_info.get('showBrRank') else 'Not found'} {captain_info.get('rankingPoints', 'Not found')}",
+                        f"    **└─ CS Rank**: {'' if captain_info.get('showCsRank') else 'Not found'} {captain_info.get('csRankingPoints', 'Not found')} "
                     ])
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
 
