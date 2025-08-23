@@ -20,7 +20,6 @@ class InfoCommands(commands.Cog):
         self.bot = bot
         self.api_url = "http://raw.thug4ff.com/info"
         self.generate_url = "https://genprofile-24nr.onrender.com/api/profile"
-        self.card_url = "https://genprofile-24nr.onrender.com/api/profile_card"
         self.session = aiohttp.ClientSession()
         self.config_data = self.load_config()
         self.cooldowns = {}
@@ -281,30 +280,8 @@ class InfoCommands(commands.Cog):
         except Exception as e:
             await ctx.send(f" Unexpected error: `{e}`")
         finally:
-            gc.collect()
-            
-          if region and uid:
-                try:
-                    image_url = f"{self.card_url}?uid={uid}"
-                    print(f"Url d'image = {image_url}")
-                    if image_url:
-                        async with self.session.get(image_url) as img_file:
-                            if img_file.status == 200:
-                                with io.BytesIO(await img_file.read()) as buf:
-                                    file = discord.File(buf, filename=f"outfit_{uuid.uuid4().hex[:8]}.png")
-                                    await ctx.send(file=file)  # ✅ ENVOYER L'IMAGE
-                                    print("Image envoyée avec succès")
-                            else:
-                                print(f"Erreur HTTP: {img_file.status}")
-                except Exception as e:
-                    print("Image generation failed:", e)
-
-        except Exception as e:
-            await ctx.send(f" Unexpected error: `{e}`")
-        finally:
             gc.collect()  
-
-
+            
     async def cog_unload(self):
         await self.session.close()
 
