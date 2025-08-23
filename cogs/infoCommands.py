@@ -257,19 +257,32 @@ class InfoCommands(commands.Cog):
                     ])
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
 
+            if region and uid:
+                try:
+                    image_url = f"{card.api_url}?uid={uid}"
+                    print(f"Url d'image = {image_url}")
+                    if image_url:
+                        async with self.session.get(image_url) as img_file:
+                            if img_file.status == 200:
+                                with io.BytesIO(await img_file.read()) as buf:
+                                    file = discord.File(buf, filename=f"outfit_{uuid.uuid4().hex[:8]}.png")
+                                    await ctx.send(file=file)  # ✅ ENVOYER L'IMAGE
+                                    print("Image envoyée avec succès")
+                            else:
+                                print(f"Erreur HTTP: {img_file.status}")
+                except Exception as e:
+                    print("Image generation failed:", e)
+
+        except Exception as e:
+            await ctx.send(f" Unexpected error: `{e}`")
+        finally:
+            gc.collect()
+              
+
 
 
             embed.set_footer(text="DEVELOPED BY TANVIR")
             await ctx.send(embed=embed)
-            
-            try:
-            async with ctx.typing():
-                async with card.session.get(f"{card.api_url}?uid={uid}") as response:
-                    if response.status == 404:
-                        return await ctx.send(f" Player with UID `{uid}` not found.")
-                    if response.status != 200:
-                        return await ctx.send("API error. Try again later.")
-                    data = await response.json()
 
             if region and uid:
                 try:
