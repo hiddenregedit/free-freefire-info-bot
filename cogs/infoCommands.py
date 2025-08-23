@@ -19,7 +19,7 @@ class InfoCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.api_url = "http://raw.thug4ff.com/info"
-        card.api_url = "https://genprofile-24nr.onrender.com/api/profile_card"
+        self.card_url = "https://genprofile-24nr.onrender.com/api/profile_card"
         self.generate_url = "https://genprofile-24nr.onrender.com/api/profile"
         self.session = aiohttp.ClientSession()
         self.config_data = self.load_config()
@@ -263,7 +263,7 @@ class InfoCommands(commands.Cog):
 
             if region and uid:
                 try:
-                    image_url = f"{card.api_url}?uid={uid}"
+                    image_url = f"{self.card_url}?uid={uid}"
                     print(f"Url d'image = {image_url}")
                     if image_url:
                         async with self.session.get(image_url) as img_file:
