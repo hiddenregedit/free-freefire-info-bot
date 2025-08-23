@@ -19,6 +19,7 @@ class InfoCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.api_url = "http://raw.thug4ff.com/info"
+        card.api_url = "https://genprofile-24nr.onrender.com/api/profile_card"
         self.generate_url = "https://genprofile-24nr.onrender.com/api/profile"
         self.session = aiohttp.ClientSession()
         self.config_data = self.load_config()
@@ -260,6 +261,15 @@ class InfoCommands(commands.Cog):
 
             embed.set_footer(text="DEVELOPED BY TANVIR")
             await ctx.send(embed=embed)
+            
+            try:
+            async with ctx.typing():
+                async with card.session.get(f"{card.api_url}?uid={uid}") as response:
+                    if response.status == 404:
+                        return await ctx.send(f" Player with UID `{uid}` not found.")
+                    if response.status != 200:
+                        return await ctx.send("API error. Try again later.")
+                    data = await response.json()
 
             if region and uid:
                 try:
