@@ -1,3 +1,4 @@
+
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -254,11 +255,11 @@ class InfoCommands(commands.Cog):
                         f"    **└─ CS Rank**: {'' if captain_info.get('showCsRank') else 'Not found'} {captain_info.get('csRankingPoints', 'Not found')} "
                     ])
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
-              
+
+
 
             embed.set_footer(text="DEVELOPED BY TANVIR")
             await ctx.send(embed=embed)
-            
 
             if region and uid:
                 try:
@@ -279,8 +280,9 @@ class InfoCommands(commands.Cog):
         except Exception as e:
             await ctx.send(f" Unexpected error: `{e}`")
         finally:
-            gc.collect()  
-            
+            gc.collect()
+
+
     async def cog_unload(self):
         await self.session.close()
 
