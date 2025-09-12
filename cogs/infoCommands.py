@@ -1,4 +1,3 @@
-
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -20,18 +19,13 @@ class InfoCommands(commands.Cog):
         self.bot = bot
         self.api_url = "http://raw.thug4ff.com/info"
         self.generate_url = "http://profile.thug4ff.com/api/profile"
+        self.profile_card_url = "http://profile.thug4ff.com/api/profile_card"
         self.session = aiohttp.ClientSession()
         self.config_data = self.load_config()
         self.cooldowns = {}
 
-   
-
-    
-
-    def convert_unix_timestamp(self ,timestamp: int) -> str:
+    def convert_unix_timestamp(self, timestamp: int) -> str:
         return datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-
-
 
     def check_request_limit(self, guild_id):
         try:
@@ -72,18 +66,14 @@ class InfoCommands(commands.Cog):
         except IOError as e:
             print(f"Error saving config: {e}")
 
-
-
     async def is_channel_allowed(self, ctx):
         try:
             guild_id = str(ctx.guild.id)
             allowed_channels = self.config_data["servers"].get(guild_id, {}).get("info_channels", [])
 
-            # Autoriser tous les salons si aucun salon n'a été configuré pour ce serveur
             if not allowed_channels:
                 return True
 
-            # Sinon, vérifier si le salon actuel est dans la liste autorisée
             return str(ctx.channel.id) in allowed_channels
         except Exception as e:
             print(f"Error checking channel permission: {e}")
@@ -152,8 +142,6 @@ class InfoCommands(commands.Cog):
         if not await self.is_channel_allowed(ctx):
             return await ctx.send(" This command is not allowed in this channel.", ephemeral=True)
 
-
-
         cooldown = self.config_data["global_settings"]["default_cooldown"]
         if guild_id in self.config_data["servers"]:
             cooldown = self.config_data["servers"][guild_id]["config"].get("cooldown", cooldown)
@@ -165,7 +153,6 @@ class InfoCommands(commands.Cog):
                 return await ctx.send(f" Please wait {remaining}s before using this command again", ephemeral=True)
 
         self.cooldowns[ctx.author.id] = datetime.now()
-       
 
         try:
             async with ctx.typing():
@@ -176,7 +163,6 @@ class InfoCommands(commands.Cog):
                         return await ctx.send("API error. Try again later.")
                     data = await response.json()
 
-            
             basic_info = data.get('basicInfo', {})
             captain_info = data.get('captainBasicInfo', {})
             clan_info = data.get('clanBasicInfo', {})
@@ -184,7 +170,6 @@ class InfoCommands(commands.Cog):
             pet_info = data.get('petInfo', {})
             profile_info = data.get('profileInfo', {})
             social_info = data.get('socialInfo', {})
-
 
             region = basic_info.get('region', 'Not found')
 
@@ -205,7 +190,6 @@ class InfoCommands(commands.Cog):
                 f"**├─ Honor Score**: {credit_score_info.get('creditScore', 'Not found')}",
                 f"**└─ Signature**: {social_info.get('signature', 'None') or 'None'}"
             ]), inline=False)
-          
 
             embed.add_field(name="", value="\n".join([
                 "**┌  ACCOUNT ACTIVITY**",
@@ -213,9 +197,8 @@ class InfoCommands(commands.Cog):
                 f"**├─ Current BP Badges**: {basic_info.get('badgeCnt', 'Not found')}",
                 f"**├─ BR Rank**: {'' if basic_info.get('showBrRank') else 'Not found'} {basic_info.get('rankingPoints', '?')}",
                 f"**├─ CS Rank**: {'' if basic_info.get('showCsRank') else 'Not found'} {basic_info.get('csRankingPoints', '?')} ",
-                f"**├─ Created At**: {self.convert_unix_timestamp(int(basic_info.get('createAt', 'Not found')))}",
-                f"**└─ Last Login**: {self.convert_unix_timestamp(int(basic_info.get('lastLoginAt', 'Not found')))}"
-
+                f"**├─ Created At**: {self.convert_unix_timestamp(int(basic_info.get('createAt', '0')))}",
+                f"**└─ Last Login**: {self.convert_unix_timestamp(int(basic_info.get('lastLoginAt', '0')))}"
             ]), inline=False)
 
             embed.add_field(name="", value="\n".join([
@@ -248,50 +231,53 @@ class InfoCommands(commands.Cog):
                         f"    **├─ Leader Name**: {captain_info.get('nickname', 'Not found')}",
                         f"    **├─ Leader UID**: `{captain_info.get('accountId', 'Not found')}`",
                         f"    **├─ Leader Level**: {captain_info.get('level', 'Not found')} (Exp: {captain_info.get('exp', '?')})",
-                        f"    **├─ Last Login**: {self.convert_unix_timestamp(int(captain_info.get('lastLoginAt', 'Not found')))}",
+                        f"    **├─ Last Login**: {self.convert_unix_timestamp(int(captain_info.get('lastLoginAt', '0')))}",
                         f"    **├─ Title**: {captain_info.get('title', 'Not found')}",
                         f"    **├─ BP Badges**: {captain_info.get('badgeCnt', '?')}",
                         f"    **├─ BR Rank**: {'' if captain_info.get('showBrRank') else 'Not found'} {captain_info.get('rankingPoints', 'Not found')}",
                         f"    **└─ CS Rank**: {'' if captain_info.get('showCsRank') else 'Not found'} {captain_info.get('csRankingPoints', 'Not found')} "
                     ])
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
-              
 
             embed.set_footer(text="DEVELOPED BY TANVIR")
             await ctx.send(embed=embed)
-            
 
-            if region and uid:
-                try:
-                    image_url = f"{self.generate_url}?uid={uid}"
-                    print(f"Url d'image = {image_url}")
-                    if image_url:
-                        async with self.session.get(image_url) as img_file:
-                            if img_file.status == 200:
-                                with io.BytesIO(await img_file.read()) as buf:
-                                    file = discord.File(buf, filename=f"outfit_{uuid.uuid4().hex[:8]}.png")
-                                    await ctx.send(file=file)  # ✅ ENVOYER L'IMAGE
-                                    print("Image envoyée avec succès")
-                            else:
-                                print(f"Erreur HTTP: {img_file.status}")
-                except Exception as e:
-                    print("Image generation failed:", e)
+            # ---- Outfit Image ----
+            try:
+                image_url = f"{self.generate_url}?uid={uid}"
+                async with self.session.get(image_url) as img_file:
+                    if img_file.status == 200:
+                        with io.BytesIO(await img_file.read()) as buf:
+                            file = discord.File(buf, filename=f"outfit_{uuid.uuid4().hex[:8]}.png")
+                            await ctx.send(file=file)
+                            print("Outfit image sent successfully")
+            except Exception as e:
+                print("Outfit image failed:", e)
+
+            # ---- Profile Card ----
+            try:
+                profile_card_url = f"{self.profile_card_url}?uid={uid}"
+                async with self.session.get(profile_card_url) as card_file:
+                    if card_file.status == 200:
+                        with io.BytesIO(await card_file.read()) as buf:
+                            file = discord.File(buf, filename=f"profile_card_{uuid.uuid4().hex[:8]}.png")
+                            await ctx.send(file=file)
+                            print("Profile card sent successfully")
+            except Exception as e:
+                print("Profile card generation failed:", e)
 
         except Exception as e:
             await ctx.send(f" Unexpected error: `{e}`")
         finally:
-            gc.collect()  
-            
+            gc.collect()
+
     async def cog_unload(self):
         await self.session.close()
 
     async def _send_player_not_found(self, ctx, uid):
         embed = discord.Embed(
             title="❌ Player Not Found",
-            description=(
-                f"UID `{uid}` not found or inaccessible.\n\n"
-                "⚠️ **Note:** IND servers are currently not working."
-            ),
+            description=(f"UID `{uid}` not found or inaccessible.\n\n⚠️ **Note:** IND servers are currently not working."),
             color=0xE74C3C
         )
         embed.add_field(
@@ -307,7 +293,6 @@ class InfoCommands(commands.Cog):
             description="The Free Fire API is not responding. Try again later.",
             color=0xF39C12
         ))
-
 
 
 async def setup(bot):
