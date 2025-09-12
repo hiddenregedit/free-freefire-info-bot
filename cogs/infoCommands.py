@@ -181,7 +181,7 @@ class InfoCommands(commands.Cog):
             embed.set_thumbnail(url=ctx.author.display_avatar.url)
 
             embed.add_field(name="", value="\n".join([
-                "**┌  ACCOUNT BASIC INFO**",
+                "**┌ 👤 ACCOUNT BASIC INFO**",
                 f"**├─ Name**: {basic_info.get('nickname', 'Not found')}",
                 f"**├─ UID**: `{uid}`",
                 f"**├─ Level**: {basic_info.get('level', 'Not found')} (Exp: {basic_info.get('exp', '?')})",
@@ -192,7 +192,7 @@ class InfoCommands(commands.Cog):
             ]), inline=False)
 
             embed.add_field(name="", value="\n".join([
-                "**┌  ACCOUNT ACTIVITY**",
+                "**┌ 🎮 ACCOUNT ACTIVITY**",
                 f"**├─ Most Recent OB**: {basic_info.get('releaseVersion', '?')}",
                 f"**├─ Current BP Badges**: {basic_info.get('badgeCnt', 'Not found')}",
                 f"**├─ BR Rank**: {'' if basic_info.get('showBrRank') else 'Not found'} {basic_info.get('rankingPoints', '?')}",
@@ -202,7 +202,7 @@ class InfoCommands(commands.Cog):
             ]), inline=False)
 
             embed.add_field(name="", value="\n".join([
-                "**┌  ACCOUNT OVERVIEW**",
+                "**┌ 👕 ACCOUNT OVERVIEW**",
                 f"**├─ Avatar ID**: {profile_info.get('avatarId', 'Not found')}",
                 f"**├─ Banner ID**: {basic_info.get('bannerId', 'Not found')}",
                 f"**├─ Pin ID**: {captain_info.get('pinId', 'Not found') if captain_info else 'Default'}",
@@ -210,7 +210,7 @@ class InfoCommands(commands.Cog):
             ]), inline=False)
 
             embed.add_field(name="", value="\n".join([
-                "**┌  PET DETAILS**",
+                "**┌ 🐾 PET DETAILS**",
                 f"**├─ Equipped?**: {'Yes' if pet_info.get('isSelected') else 'Not Found'}",
                 f"**├─ Pet Name**: {pet_info.get('name', 'Not Found')}",
                 f"**├─ Pet Exp**: {pet_info.get('exp', 'Not Found')}",
@@ -219,7 +219,7 @@ class InfoCommands(commands.Cog):
 
             if clan_info:
                 guild_info = [
-                    "**┌  GUILD INFO**",
+                    "**┌ 🛡️ GUILD INFO**",
                     f"**├─ Guild Name**: {clan_info.get('clanName', 'Not found')}",
                     f"**├─ Guild ID**: `{clan_info.get('clanId', 'Not found')}`",
                     f"**├─ Guild Level**: {clan_info.get('clanLevel', 'Not found')}",
@@ -227,7 +227,7 @@ class InfoCommands(commands.Cog):
                 ]
                 if captain_info:
                     guild_info.extend([
-                        "**└─ Leader Info**:",
+                        "**└─ 👑 Leader Info**:",
                         f"    **├─ Leader Name**: {captain_info.get('nickname', 'Not found')}",
                         f"    **├─ Leader UID**: `{captain_info.get('accountId', 'Not found')}`",
                         f"    **├─ Leader Level**: {captain_info.get('level', 'Not found')} (Exp: {captain_info.get('exp', '?')})",
@@ -240,6 +240,7 @@ class InfoCommands(commands.Cog):
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
 
             embed.set_footer(text="DEVELOPED BY TANVIR")
+            embed.description += "\n🔗 JOIN : https://discord.gg/RXSh8MpsZA"
             await ctx.send(embed=embed)
 
             # ---- Outfit Image ----
