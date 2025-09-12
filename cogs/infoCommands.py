@@ -240,7 +240,7 @@ class InfoCommands(commands.Cog):
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
 
             embed.set_footer(text="DEVELOPED BY TANVIR")
-            embed.description += "\n🔗 JOIN : https://discord.gg/RXSh8MpsZA"
+            embed.description = (embed.description or "") + "\n🔗 JOIN : https://discord.gg/RXSh8MpsZA"
             await ctx.send(embed=embed)
 
             # ---- Outfit Image ----
