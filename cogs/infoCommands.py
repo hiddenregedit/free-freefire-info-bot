@@ -178,6 +178,13 @@ class InfoCommands(commands.Cog):
             )
             embed.set_thumbnail(url=ctx.author.display_avatar.url)
 
+            # 🔗 JOIN link উপরে
+            embed.add_field(
+                name="",
+                value="🔗 **JOIN : [JOIN NOW](https://discord.gg/RXSh8MpsZA)**",
+                inline=False
+            )
+
             embed.add_field(name="", value="\n".join([
                 "**┌ 👤 ACCOUNT BASIC INFO**",
                 f"**├─ Name**: {basic_info.get('nickname', 'Not found')}",
@@ -236,12 +243,6 @@ class InfoCommands(commands.Cog):
                         f"    **└─ CS Rank**: {'' if captain_info.get('showCsRank') else 'Not found'} {captain_info.get('csRankingPoints', 'Not found')} "
                     ])
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
-             # 🔗 JOIN link উপরে
-            embed.add_field(
-                name="",
-                value="🔗 **JOIN : [JOIN NOW](https://discord.gg/RXSh8MpsZA)**",
-                inline=False
-            )   
 
             # profile card শেষে
             embed.set_image(url=f"http://profile.thug4ff.com/api/profile_card?uid={uid}")
