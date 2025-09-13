@@ -9,7 +9,6 @@ import asyncio
 import io
 import uuid
 import gc
-from datetime import datetime
 
 CONFIG_FILE = "info_channels.json"
 
@@ -179,6 +178,13 @@ class InfoCommands(commands.Cog):
             )
             embed.set_thumbnail(url=ctx.author.display_avatar.url)
 
+            # 🔗 JOIN link উপরে
+            embed.add_field(
+                name="",
+                value="🔗 **JOIN : [Click Here](https://discord.gg/RXSh8MpsZA)**",
+                inline=False
+            )
+
             embed.add_field(name="", value="\n".join([
                 "**┌ 👤 ACCOUNT BASIC INFO**",
                 f"**├─ Name**: {basic_info.get('nickname', 'Not found')}",
@@ -236,10 +242,11 @@ class InfoCommands(commands.Cog):
                         f"    **├─ BR Rank**: {'' if captain_info.get('showBrRank') else 'Not found'} {captain_info.get('rankingPoints', 'Not found')}",
                         f"    **└─ CS Rank**: {'' if captain_info.get('showCsRank') else 'Not found'} {captain_info.get('csRankingPoints', 'Not found')} "
                     ])
-           
+                embed.add_field(name="", value="\n".join(guild_info), inline=False)
+
+            # profile card শেষে
             embed.set_image(url=f"http://profile.thug4ff.com/api/profile_card?uid={uid}")
             embed.set_footer(text="DEVELOPED BY TANVIR")
-            embed.description = (embed.description or "") + "\n🔗 JOIN : https://discord.gg/RXSh8MpsZA"
             await ctx.send(embed=embed)
 
             # ---- Outfit Image ----
@@ -253,7 +260,6 @@ class InfoCommands(commands.Cog):
                             print("Outfit image sent successfully")
             except Exception as e:
                 print("Outfit image failed:", e)
-
 
         except Exception as e:
             await ctx.send(f" Unexpected error: `{e}`")
