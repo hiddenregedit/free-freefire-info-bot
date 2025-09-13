@@ -7,7 +7,7 @@ import json
 import os
 import asyncio
 import io
-import uid
+import uuid
 import gc
 from datetime import datetime
 
