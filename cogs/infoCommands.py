@@ -237,8 +237,8 @@ class InfoCommands(commands.Cog):
                         f"    **├─ BR Rank**: {'' if captain_info.get('showBrRank') else 'Not found'} {captain_info.get('rankingPoints', 'Not found')}",
                         f"    **└─ CS Rank**: {'' if captain_info.get('showCsRank') else 'Not found'} {captain_info.get('csRankingPoints', 'Not found')} "
                     ])
-                embed.add_field(name="", value="\n".join(guild_info), inline=False)
-
+           
+            embed.set_image(url=f"http://profile.thug4ff.com/api/profile_card?uid={uid}")
             embed.set_footer(text="DEVELOPED BY TANVIR")
             embed.description = (embed.description or "") + "\n🔗 JOIN : https://discord.gg/RXSh8MpsZA"
             await ctx.send(embed=embed)
@@ -255,17 +255,6 @@ class InfoCommands(commands.Cog):
             except Exception as e:
                 print("Outfit image failed:", e)
 
-            # ---- Profile Card ----
-            try:
-                profile_card_url = f"{self.profile_card_url}?uid={uid}"
-                async with self.session.get(profile_card_url) as card_file:
-                    if card_file.status == 200:
-                        with io.BytesIO(await card_file.read()) as buf:
-                            file = discord.File(buf, filename=f"profile_card_{uuid.uuid4().hex[:8]}.png")
-                            await ctx.send(file=file)
-                            print("Profile card sent successfully")
-            except Exception as e:
-                print("Profile card generation failed:", e)
 
         except Exception as e:
             await ctx.send(f" Unexpected error: `{e}`")
