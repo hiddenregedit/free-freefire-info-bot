@@ -17,7 +17,7 @@ class InfoCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.api_url = "http://raw.thug4ff.com/info"
-        self.generate_url = "http://profile.thug4ff.com/api/profile"
+        self.generate_url = "https://profile2.thug4ff.com/api/profile"
         self.session = aiohttp.ClientSession()
         self.config_data = self.load_config()
         self.cooldowns = {}
@@ -245,7 +245,7 @@ class InfoCommands(commands.Cog):
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
 
             # profile card শেষে
-            embed.set_image(url=f"http://profile.thug4ff.com/api/profile_card?uid={uid}")
+            embed.set_image(url=f"https://profile2.thug4ff.com/api/profile_card?uid={uid}")
             embed.set_footer(text="DEVELOPED BY TANVIR")
             await ctx.send(embed=embed)
 
