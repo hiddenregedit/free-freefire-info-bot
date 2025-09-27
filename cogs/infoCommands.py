@@ -239,8 +239,6 @@ class InfoCommands(commands.Cog):
                     ])
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
 
-            # profile card inside embed
-            embed.set_image(url=f"https://profile2.thug4ff.com/api/profile_card?uid={uid}")
             embed.set_footer(text="DEVELOPED BY TANVIR")
             await ctx.send(embed=embed)
 
