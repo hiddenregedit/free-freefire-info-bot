@@ -237,7 +237,6 @@ class InfoCommands(commands.Cog):
                         f"    **└─ CS Rank**: {'' if captain_info.get('showCsRank') else 'Not found'} {captain_info.get('csRankingPoints', 'Not found')} "
                     ])
            
-            embed.set_image(url=f"https://profile2.thug4ff.com/api/profile_card?uid={uid}")
             embed.set_footer(text="DEVELOPED BY TANVIR")
             embed.description = (embed.description or "") + "\n🔗 JOIN : https://discord.gg/RXSh8MpsZA"
             await ctx.send(embed=embed)
