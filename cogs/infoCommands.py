@@ -173,7 +173,7 @@ class InfoCommands(commands.Cog):
 
             embed = discord.Embed(
                 title=" Player Information",
-                color=discord.Color.red(),
+                color=discord.Color.blurple(),
                 timestamp=datetime.now()
             )
             embed.set_thumbnail(url=ctx.author.display_avatar.url)
