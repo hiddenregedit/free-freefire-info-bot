@@ -16,7 +16,7 @@ CONFIG_FILE = "info_channels.json"
 class InfoCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.api_url = "https://toxicinfo.vercel.app/info"
+        self.api_url = "https://toxicinfo.vercel.app/player-info"
         self.generate_url = "https://profile2.thug4ff.com/api/profile"
         self.session = aiohttp.ClientSession()
         self.config_data = self.load_config()
@@ -244,8 +244,6 @@ class InfoCommands(commands.Cog):
                     ])
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
 
-            # profile card শেষে
-            embed.set_image(url=f"https://profile2.thug4ff.com/api/profile_card?uid={uid}")
             embed.set_footer(text="🔗 DEVELOPED BY TANVIR")
             await ctx.send(embed=embed)
 
