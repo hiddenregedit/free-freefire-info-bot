@@ -16,7 +16,7 @@ CONFIG_FILE = "info_channels.json"
 class InfoCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.api_url = "https://ff-info-nine.vercel.app/info"
+        self.api_url = "https://toxicinfo.vercel.app/info"
         self.generate_url = "https://profile.thug4ff.com/api/profile"
         self.session = aiohttp.ClientSession()
         self.config_data = self.load_config()
@@ -243,7 +243,8 @@ class InfoCommands(commands.Cog):
                         f"    **└─ CS Rank**: {'' if captain_info.get('showCsRank') else 'Not found'} {captain_info.get('csRankingPoints', 'Not found')} "
                     ])
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
-
+                
+            embed.image_url(image=https://profile.thug4ff.com/api/profile_card?uid={uid}")
             embed.set_footer(text="🔗 DEVELOPED BY TANVIR")
             await ctx.send(embed=embed)
 
