@@ -16,8 +16,8 @@ CONFIG_FILE = "info_channels.json"
 class InfoCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.api_url = "http://raw.thug4ff.com/info"
-        self.generate_url = "https://profile2.thug4ff.com/api/profile"
+        self.api_url = "https://ff-info-nine.vercel.app/info"
+        self.generate_url = "https://profile.thug4ff.com/api/profile"
         self.session = aiohttp.ClientSession()
         self.config_data = self.load_config()
         self.cooldowns = {}
