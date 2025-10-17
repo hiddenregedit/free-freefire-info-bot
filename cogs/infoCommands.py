@@ -241,7 +241,7 @@ class InfoCommands(commands.Cog):
                 ]
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
                 
-            embed.set_image(url=f"https://profile.thug4ff.com/api/profile_card?uid={uid}")
+            embed.set_image(url=f"https://gmg-avatar-banner.vercel.app/Gmg-avatar-banner?uid={uid}&region={region}&key=IDK")
             embed.set_footer(text="🔗 DEVELOPED BY TANVIR")
             await ctx.send(embed=embed)
 
