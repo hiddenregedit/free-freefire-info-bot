@@ -103,7 +103,7 @@ class InfoCommands(commands.Cog):
 
             region = basic_info.get("region", "Not found")
 
-            # Main embed
+            # === EMBED START ===
             embed = discord.Embed(
                 title="🎯 PLAYER INFORMATION",
                 color=discord.Color.blurple(),
@@ -134,8 +134,8 @@ class InfoCommands(commands.Cog):
                 "**┌ 🎮 ACCOUNT ACTIVITY**",
                 f"├─ **Most Recent OB:** {basic_info.get('releaseVersion', '?')}",
                 f"├─ **Current BP Badges:** {basic_info.get('badgeCnt', 'Not found')}",
-                f"├─ **BR Rank:** {'' if basic_info.get('showBrRank') else 'Not found'} {basic_info.get('rankingPoints', '?')}",
-                f"├─ **CS Rank:** {'' if basic_info.get('showCsRank') else 'Not found'} {basic_info.get('csRankingPoints', '?')}",
+                f"├─ **BR Rank:** {basic_info.get('rankingPoints', 'Not found')}",
+                f"├─ **CS Rank:** {basic_info.get('csRankingPoints', 'Not found')}",
                 f"├─ **Created At:** {self.convert_unix_timestamp(int(basic_info.get('createAt', '0')))}",
                 f"└─ **Last Login:** {self.convert_unix_timestamp(int(basic_info.get('lastLoginAt', '0')))}"
             ]), inline=False)
@@ -181,9 +181,11 @@ class InfoCommands(commands.Cog):
             # Embed Footer + Image
             embed.set_image(url=f"https://profile.thug4ff.com/api/profile_card?uid={uid}")
             embed.set_footer(text="🔗 DEVELOPED BY TANVIR")
+
+            # Send main embed only once
             await ctx.send(embed=embed)
 
-            # 🖼️ Outfit image fetcher
+            # 🖼️ Outfit image fetcher (ONLY once)
             try:
                 image_url = f"{self.generate_url}?uid={uid}"
                 async with self.session.get(image_url) as img_file:
