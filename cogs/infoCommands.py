@@ -92,7 +92,7 @@ class InfoCommands(commands.Cog):
                         return await ctx.send("⚠️ API error. Try again later.")
                     data = await response.json()
 
-            # Extract info sections
+            # Extract info
             basic_info = data.get("basicInfo", {})
             captain_info = data.get("captainBasicInfo", {})
             clan_info = data.get("clanBasicInfo", {})
@@ -100,8 +100,18 @@ class InfoCommands(commands.Cog):
             pet_info = data.get("petInfo", {})
             profile_info = data.get("profileInfo", {})
             social_info = data.get("socialInfo", {})
-
             region = basic_info.get("region", "Not found")
+
+            # === FIRST SEND OUTFIT IMAGE ===
+            try:
+                image_url = f"{self.generate_url}?uid={uid}"
+                async with self.session.get(image_url) as img_file:
+                    if img_file.status == 200:
+                        with io.BytesIO(await img_file.read()) as buf:
+                            file = discord.File(buf, filename=f"outfit_{uuid.uuid4().hex[:8]}.png")
+                            await ctx.send(file=file)
+            except Exception as e:
+                print("Outfit image failed:", e)
 
             # === EMBED START ===
             embed = discord.Embed(
@@ -178,23 +188,11 @@ class InfoCommands(commands.Cog):
                 ]
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
 
-            # Embed Footer + Image
             embed.set_image(url=f"https://profile.thug4ff.com/api/profile_card?uid={uid}")
             embed.set_footer(text="🔗 DEVELOPED BY TANVIR")
 
-            # Send main embed only once
+            # === SEND EMBED SECOND ===
             await ctx.send(embed=embed)
-
-            # 🖼️ Outfit image fetcher (ONLY once)
-            try:
-                image_url = f"{self.generate_url}?uid={uid}"
-                async with self.session.get(image_url) as img_file:
-                    if img_file.status == 200:
-                        with io.BytesIO(await img_file.read()) as buf:
-                            file = discord.File(buf, filename=f"outfit_{uuid.uuid4().hex[:8]}.png")
-                            await ctx.send(file=file)
-            except Exception as e:
-                print("Outfit image failed:", e)
 
         except Exception as e:
             await ctx.send(f"❌ Unexpected error: `{e}`")
