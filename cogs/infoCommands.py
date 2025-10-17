@@ -232,7 +232,8 @@ class InfoCommands(commands.Cog):
                 ]
                 if captain_info:
                     guild_info.extend([
-                        "**└─ 👑 LEADER INFO**:",
+                        "│",
+                        "**└─ 👑 LEADER INFO**",
                         f"    **├─ Leader Name**: {captain_info.get('nickname', 'Not found')}",
                         f"    **├─ Leader UID**: `{captain_info.get('accountId', 'Not found')}`",
                         f"    **├─ Leader Level**: {captain_info.get('level', 'Not found')} (Exp: {captain_info.get('exp', '?')})",
