@@ -22,12 +22,14 @@ class InfoCommands(commands.Cog):
         self.config_data = self.load_config()
         self.cooldowns = {}
 
+    # Convert UNIX timestamp safely
     def convert_unix_timestamp(self, timestamp: int) -> str:
         try:
-            return datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+            return datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
         except Exception:
             return "Not found"
 
+    # Load config safely
     def load_config(self):
         default_config = {
             "servers": {},
@@ -45,15 +47,18 @@ class InfoCommands(commands.Cog):
                 return default_config
         return default_config
 
+    # Save config
     def save_config(self):
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(self.config_data, f, indent=4, ensure_ascii=False)
 
+    # Channel check
     async def is_channel_allowed(self, ctx):
         guild_id = str(ctx.guild.id)
         allowed_channels = self.config_data["servers"].get(guild_id, {}).get("info_channels", [])
         return not allowed_channels or str(ctx.channel.id) in allowed_channels
 
+    # Main info command
     @commands.hybrid_command(name="info", description="Displays Free Fire player information")
     @app_commands.describe(uid="Enter player UID")
     async def player_info(self, ctx: commands.Context, uid: str):
@@ -69,6 +74,7 @@ class InfoCommands(commands.Cog):
         if guild_id in self.config_data["servers"]:
             cooldown = self.config_data["servers"][guild_id]["config"].get("cooldown", cooldown)
 
+        # Cooldown check
         if ctx.author.id in self.cooldowns:
             last_used = self.cooldowns[ctx.author.id]
             if (datetime.now() - last_used).seconds < cooldown:
@@ -86,6 +92,7 @@ class InfoCommands(commands.Cog):
                         return await ctx.send("⚠️ API error. Try again later.")
                     data = await response.json()
 
+            # Extract info sections
             basic_info = data.get("basicInfo", {})
             captain_info = data.get("captainBasicInfo", {})
             clan_info = data.get("clanBasicInfo", {})
@@ -96,6 +103,7 @@ class InfoCommands(commands.Cog):
 
             region = basic_info.get("region", "Not found")
 
+            # Main embed
             embed = discord.Embed(
                 title="🎯 PLAYER INFORMATION",
                 color=discord.Color.blurple(),
@@ -109,74 +117,73 @@ class InfoCommands(commands.Cog):
                 inline=False
             )
 
+            # ┌── ACCOUNT BASIC INFO ──┐
             embed.add_field(name="", value="\n".join([
                 "**┌ 👤 ACCOUNT BASIC INFO**",
-                f"**├─ Name**: {basic_info.get('nickname', 'Not found')}",
-                f"**├─ UID**: `{uid}`",
-                f"**├─ Level**: {basic_info.get('level', 'Not found')} (Exp: {basic_info.get('exp', '?')})",
-                f"**├─ Region**: {region}",
-                f"**├─ Likes**: {basic_info.get('liked', 'Not found')}",
-                f"**├─ Honor Score**: {credit_score_info.get('creditScore', 'Not found')}",
-                f"**└─ Signature**: {social_info.get('signature', 'None') or 'None'}"
+                f"├─ **Name:** {basic_info.get('nickname', 'Not found')}",
+                f"├─ **UID:** `{uid}`",
+                f"├─ **Level:** {basic_info.get('level', 'Not found')} (Exp: {basic_info.get('exp', '?')})",
+                f"├─ **Region:** {region}",
+                f"├─ **Likes:** {basic_info.get('liked', 'Not found')}",
+                f"├─ **Honor Score:** {credit_score_info.get('creditScore', 'Not found')}",
+                f"└─ **Signature:** {social_info.get('signature', 'None') or 'None'}"
             ]), inline=False)
 
+            # ┌── ACCOUNT ACTIVITY ──┐
             embed.add_field(name="", value="\n".join([
                 "**┌ 🎮 ACCOUNT ACTIVITY**",
-                f"**├─ Most Recent OB**: {basic_info.get('releaseVersion', '?')}",
-                f"**├─ Current BP Badges**: {basic_info.get('badgeCnt', 'Not found')}",
-                f"**├─ BR Rank**: {'' if basic_info.get('showBrRank') else 'Not found'} {basic_info.get('rankingPoints', '?')}",
-                f"**├─ CS Rank**: {'' if basic_info.get('showCsRank') else 'Not found'} {basic_info.get('csRankingPoints', '?')}",
-                f"**├─ Created At**: {self.convert_unix_timestamp(int(basic_info.get('createAt', '0')))}",
-                f"**└─ Last Login**: {self.convert_unix_timestamp(int(basic_info.get('lastLoginAt', '0')))}"
+                f"├─ **Most Recent OB:** {basic_info.get('releaseVersion', '?')}",
+                f"├─ **Current BP Badges:** {basic_info.get('badgeCnt', 'Not found')}",
+                f"├─ **BR Rank:** {'' if basic_info.get('showBrRank') else 'Not found'} {basic_info.get('rankingPoints', '?')}",
+                f"├─ **CS Rank:** {'' if basic_info.get('showCsRank') else 'Not found'} {basic_info.get('csRankingPoints', '?')}",
+                f"├─ **Created At:** {self.convert_unix_timestamp(int(basic_info.get('createAt', '0')))}",
+                f"└─ **Last Login:** {self.convert_unix_timestamp(int(basic_info.get('lastLoginAt', '0')))}"
             ]), inline=False)
 
+            # ┌── ACCOUNT OVERVIEW ──┐
             embed.add_field(name="", value="\n".join([
                 "**┌ 👕 ACCOUNT OVERVIEW**",
-                f"**├─ Avatar ID**: {profile_info.get('avatarId', 'Not found')}",
-                f"**├─ Banner ID**: {basic_info.get('bannerId', 'Not found')}",
-                f"**├─ Pin ID**: {captain_info.get('pinId', 'Not found') if captain_info else 'Default'}",
-                f"**└─ Equipped Skills**: {profile_info.get('equipedSkills', 'Not found')}"
+                f"├─ **Avatar ID:** {profile_info.get('avatarId', 'Not found')}",
+                f"├─ **Banner ID:** {basic_info.get('bannerId', 'Not found')}",
+                f"├─ **Pin ID:** {captain_info.get('pinId', 'Not found') if captain_info else 'Default'}",
+                f"└─ **Equipped Skills:** {profile_info.get('equipedSkills', 'Not found')}"
             ]), inline=False)
 
+            # ┌── PET DETAILS ──┐
             embed.add_field(name="", value="\n".join([
                 "**┌ 🐾 PET DETAILS**",
-                f"**├─ Equipped?**: {'Yes' if pet_info.get('isSelected') else 'Not Found'}",
-                f"**├─ Pet Name**: {pet_info.get('name', 'Not Found')}",
-                f"**├─ Pet Exp**: {pet_info.get('exp', 'Not Found')}",
-                f"**└─ Pet Level**: {pet_info.get('level', 'Not Found')}"
+                f"├─ **Equipped?** {'Yes' if pet_info.get('isSelected') else 'Not Found'}",
+                f"├─ **Pet Name:** {pet_info.get('name', 'Not Found')}",
+                f"├─ **Pet Exp:** {pet_info.get('exp', 'Not Found')}",
+                f"└─ **Pet Level:** {pet_info.get('level', 'Not Found')}"
             ]), inline=False)
 
-            # ✅ FIXED GUILD SECTION (Queen Cheats style)
+            # ┌── GUILD INFO ──┐
             if clan_info:
                 guild_info = [
-                    "**┌ 🛡️ GUILD INFO**",
-                    f"│ **Guild Name**   : {clan_info.get('clanName', 'Not found')}",
-                    f"│ **Guild ID**     : `{clan_info.get('clanId', 'Not found')}`",
-                    f"│ **Guild Level**  : {clan_info.get('clanLevel', 'Not found')}",
-                    f"│ **Live Members** : {clan_info.get('memberNum', 'Not found')}/{clan_info.get('capacity', '?')}"
+                    "┌ 🛡️ **GUILD INFO**",
+                    f"├─ **Guild Name:** {clan_info.get('clanName', 'Not found')}",
+                    f"├─ **Guild ID:** `{clan_info.get('clanId', 'Not found')}`",
+                    f"├─ **Guild Level:** {clan_info.get('clanLevel', 'Not found')}",
+                    f"├─ **Live Members:** {clan_info.get('memberNum', 'Not found')}/{clan_info.get('capacity', '?')}",
+                    "└─ 👑 **LEADER INFO:**",
+                    f"  ├─ **Leader Name:** {captain_info.get('nickname', 'Not found')}",
+                    f"  ├─ **Leader UID:** `{captain_info.get('accountId', 'Not found')}`",
+                    f"  ├─ **Leader Level:** {captain_info.get('level', 'Not found')} (Exp: {captain_info.get('exp', '?')})",
+                    f"  ├─ **Last Login:** {self.convert_unix_timestamp(int(captain_info.get('lastLoginAt', '0')))}",
+                    f"  ├─ **Title:** {captain_info.get('title', 'Not found')}",
+                    f"  ├─ **BP Badges:** {captain_info.get('badgeCnt', '?')}",
+                    f"  ├─ **BR Rank:** {captain_info.get('rankingPoints', 'Not found')}",
+                    f"  └─ **CS Rank:** {captain_info.get('csRankingPoints', 'Not found')}"
                 ]
-
-                if captain_info:
-                    guild_info.extend([
-                        "│",
-                        "└─ 👑 **LEADER INFO**",
-                        f"  ├─ **Leader Name** : {captain_info.get('nickname', 'Not found')}",
-                        f"  ├─ **Leader UID**  : `{captain_info.get('accountId', 'Not found')}`",
-                        f"  ├─ **Leader Level**: {captain_info.get('level', 'Not found')} (Exp: {captain_info.get('exp', '?')})",
-                        f"  ├─ **Last Login**  : {self.convert_unix_timestamp(int(captain_info.get('lastLoginAt', '0')))}",
-                        f"  ├─ **Title**       : {captain_info.get('title', 'Not found')}",
-                        f"  ├─ **BP Badges**   : {captain_info.get('badgeCnt', '?')}",
-                        f"  ├─ **BR Rank**     : {'' if captain_info.get('showBrRank') else 'Not found'} {captain_info.get('rankingPoints', 'Not found')}",
-                        f"  └─ **CS Rank**     : {'' if captain_info.get('showCsRank') else 'Not found'} {captain_info.get('csRankingPoints', 'Not found')}"
-                    ])
-
                 embed.add_field(name="", value="\n".join(guild_info), inline=False)
 
+            # Embed Footer + Image
             embed.set_image(url=f"https://profile.thug4ff.com/api/profile_card?uid={uid}")
             embed.set_footer(text="🔗 DEVELOPED BY TANVIR")
             await ctx.send(embed=embed)
 
-            # 🖼️ Outfit image
+            # 🖼️ Outfit image fetcher
             try:
                 image_url = f"{self.generate_url}?uid={uid}"
                 async with self.session.get(image_url) as img_file:
