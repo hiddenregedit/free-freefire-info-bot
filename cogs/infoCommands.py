@@ -122,7 +122,6 @@ class InfoCommands(commands.Cog):
             pet = data.get("petInfo", {})
             social = data.get("socialInfo", {})
 
-            # 🎨 Embed
             embed = discord.Embed(
                 title=f"🎯 {basic.get('nickname', 'Unknown')} — UID: {uid}",
                 color=discord.Color.blurple(),
@@ -165,7 +164,6 @@ class InfoCommands(commands.Cog):
                 inline=False,
             )
 
-            # 🛡️ Guild Info + Leader Details
             if clan:
                 gtext = [
                     f"**Guild Name:** {clan.get('clanName', '?')}",
@@ -189,38 +187,33 @@ class InfoCommands(commands.Cog):
                 embed.add_field(name="🛡️ GUILD INFO", value="\n".join(gtext), inline=False)
 
             embed.set_footer(text="🔗 Developed by Tanvir | RXSh8MpsZA")
-
             await ctx.send(embed=embed)
 
-            # 🧾 Outfit Image (New API)
-            try:
-                async with self.session.get(f"{self.generate_url}?uid={uid}", timeout=15) as resp:
-                    if resp.status == 200:
-                        content_type = resp.headers.get("Content-Type", "")
-                        if "image" in content_type:
-                            buf = io.BytesIO(await resp.read())
-                            file = discord.File(buf, filename=f"outfit_{uuid.uuid4().hex[:8]}.png")
-                            await ctx.send(file=file)
-                        elif "application/json" in content_type:
-                            js = await resp.json()
-                            link = js.get("image") or js.get("url")
-                            if link:
-                                async with self.session.get(link, timeout=15) as img:
-                                    if img.status == 200:
-                                        buf = io.BytesIO(await img.read())
-                                        file = discord.File(buf, filename=f"outfit_{uuid.uuid4().hex[:8]}.png")
-                                        await ctx.send(file=file)
-                                    else:
-                                        await ctx.send("⚠️ Image link not reachable.")
-                            else:
-                                await ctx.send("❌ No image link found in response.")
+            # ✅ Outfit Image (only once)
+            async with self.session.get(f"{self.generate_url}?uid={uid}", timeout=15) as resp:
+                if resp.status == 200:
+                    content_type = resp.headers.get("Content-Type", "")
+                    if "image" in content_type:
+                        buf = io.BytesIO(await resp.read())
+                        file = discord.File(buf, filename=f"outfit_{uid}.png")
+                        await ctx.send(file=file)
+                    elif "application/json" in content_type:
+                        js = await resp.json()
+                        img_link = js.get("image") or js.get("url")
+                        if img_link:
+                            async with self.session.get(img_link, timeout=15) as img_resp:
+                                if img_resp.status == 200:
+                                    buf = io.BytesIO(await img_resp.read())
+                                    file = discord.File(buf, filename=f"outfit_{uid}.png")
+                                    await ctx.send(file=file)
+                                else:
+                                    await ctx.send("⚠️ Outfit image not reachable.")
                         else:
-                            await ctx.send("⚠️ Unexpected outfit image format.")
+                            await ctx.send("❌ No outfit image link found.")
                     else:
-                        await ctx.send("⚠️ Outfit image API error.")
-            except Exception as e:
-                print(f"[Outfit Image Error] {e}")
-                await ctx.send("⚠️ Failed to load outfit image.")
+                        await ctx.send("⚠️ Invalid image format.")
+                else:
+                    await ctx.send("⚠️ Outfit API not responding.")
         except asyncio.TimeoutError:
             await ctx.send("⏱️ Request timed out.")
         except Exception as e:
