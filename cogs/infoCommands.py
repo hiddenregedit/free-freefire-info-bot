@@ -22,18 +22,19 @@ class InfoCommands(commands.Cog):
         self.config_data = self.load_config()
         self.cooldowns = {}
 
+    # -------------------
+    # Utilities
+    # -------------------
     def convert_unix_timestamp(self, timestamp: int) -> str:
-        return datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-
-    def check_request_limit(self, guild_id):
         try:
-            return self.is_server_subscribed(guild_id) or not self.is_limit_reached(guild_id)
-        except Exception as e:
-            print(f"Error checking request limit: {e}")
-            return False
+            if not timestamp or int(timestamp) == 0:
+                return "Unknown"
+            return datetime.utcfromtimestamp(int(timestamp)).strftime('%Y-%m-%d %H:%M:%S')
+        except Exception:
+            return "Unknown"
 
     def load_config(self):
-        default_config = {
+        default = {
             "servers": {},
             "global_settings": {
                 "default_all_channels": False,
@@ -41,42 +42,36 @@ class InfoCommands(commands.Cog):
                 "default_daily_limit": 30
             }
         }
-
         if os.path.exists(CONFIG_FILE):
             try:
-                with open(CONFIG_FILE, 'r') as f:
-                    loaded_config = json.load(f)
-                    loaded_config.setdefault("global_settings", {})
-                    loaded_config["global_settings"].setdefault("default_all_channels", False)
-                    loaded_config["global_settings"].setdefault("default_cooldown", 30)
-                    loaded_config["global_settings"].setdefault("default_daily_limit", 30)
-                    loaded_config.setdefault("servers", {})
-                    return loaded_config
-            except (json.JSONDecodeError, IOError) as e:
-                print(f"Error loading config: {e}")
-                return default_config
-        return default_config
+                with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                    cfg = json.load(f)
+                    cfg.setdefault("global_settings", default["global_settings"])
+                    cfg.setdefault("servers", {})
+                    return cfg
+            except Exception as e:
+                print("Config load error:", e)
+        return default
 
     def save_config(self):
         try:
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self.config_data, f, indent=4, ensure_ascii=False)
-        except IOError as e:
-            print(f"Error saving config: {e}")
+        except Exception as e:
+            print("Save config error:", e)
 
     async def is_channel_allowed(self, ctx):
         try:
             guild_id = str(ctx.guild.id)
-            allowed_channels = self.config_data["servers"].get(guild_id, {}).get("info_channels", [])
-
-            if not allowed_channels:
-                return True
-
-            return str(ctx.channel.id) in allowed_channels
+            allowed = self.config_data["servers"].get(guild_id, {}).get("info_channels", [])
+            return not allowed or str(ctx.channel.id) in allowed
         except Exception as e:
-            print(f"Error checking channel permission: {e}")
+            print("Channel check error:", e)
             return False
 
+    # -------------------
+    # Channel commands
+    # -------------------
     @commands.hybrid_command(name="setinfochannel", description="Allow a channel for !info commands")
     @commands.has_permissions(administrator=True)
     async def set_info_channel(self, ctx: commands.Context, channel: discord.TextChannel):
@@ -106,187 +101,187 @@ class InfoCommands(commands.Cog):
     @commands.hybrid_command(name="infochannels", description="List allowed channels")
     async def list_info_channels(self, ctx: commands.Context):
         guild_id = str(ctx.guild.id)
-
-        if guild_id in self.config_data["servers"] and self.config_data["servers"][guild_id]["info_channels"]:
-            channels = []
-            for channel_id in self.config_data["servers"][guild_id]["info_channels"]:
-                channel = ctx.guild.get_channel(int(channel_id))
-                channels.append(f"• {channel.mention if channel else f'ID: {channel_id}'}")
-
-            embed = discord.Embed(
-                title="Allowed channels for !info",
-                description="\n".join(channels),
-                color=discord.Color.blue()
-            )
-            cooldown = self.config_data["servers"][guild_id]["config"].get("cooldown", self.config_data["global_settings"]["default_cooldown"])
-            embed.set_footer(text=f"Current cooldown: {cooldown} seconds")
-        else:
-            embed = discord.Embed(
-                title="Allowed channels for !info",
-                description="All channels are allowed (no restriction configured)",
-                color=discord.Color.blue()
-            )
-
+        channels = self.config_data["servers"].get(guild_id, {}).get("info_channels", [])
+        desc = "\n".join(f"• <#{cid}>" for cid in channels) if channels else "All channels are allowed."
+        embed = discord.Embed(title="Allowed Channels", description=desc, color=discord.Color.blurple())
         await ctx.send(embed=embed)
 
-    @commands.hybrid_command(name="info", description="Displays information about a Free Fire player")
-    @app_commands.describe(uid="FREE FIRE INFO")
+    # -------------------
+    # Main command
+    # -------------------
+    @commands.hybrid_command(name="info", description="Displays detailed Free Fire player information")
+    @app_commands.describe(uid="FREE FIRE PLAYER UID")
     async def player_info(self, ctx: commands.Context, uid: str):
         guild_id = str(ctx.guild.id)
 
         if not uid.isdigit() or len(uid) < 6:
-            return await ctx.reply(" Invalid UID! It must:\n- Be only numbers\n- Have at least 6 digits", mention_author=False)
+            return await ctx.reply("❌ Invalid UID! It must be numeric and at least 6 digits.", mention_author=False)
 
         if not await self.is_channel_allowed(ctx):
-            return await ctx.send(" This command is not allowed in this channel.", ephemeral=True)
+            return await ctx.send("⚠️ This command is not allowed in this channel.", ephemeral=True)
 
         cooldown = self.config_data["global_settings"]["default_cooldown"]
         if guild_id in self.config_data["servers"]:
             cooldown = self.config_data["servers"][guild_id]["config"].get("cooldown", cooldown)
 
-        if ctx.author.id in self.cooldowns:
-            last_used = self.cooldowns[ctx.author.id]
-            if (datetime.now() - last_used).seconds < cooldown:
-                remaining = cooldown - (datetime.now() - last_used).seconds
-                return await ctx.send(f" Please wait {remaining}s before using this command again", ephemeral=True)
-
+        last = self.cooldowns.get(ctx.author.id)
+        if last and (datetime.now() - last).seconds < cooldown:
+            remaining = cooldown - (datetime.now() - last).seconds
+            return await ctx.send(f"⏳ Please wait {remaining}s before using this command again.", ephemeral=True)
         self.cooldowns[ctx.author.id] = datetime.now()
 
         try:
             async with ctx.typing():
-                async with self.session.get(f"{self.api_url}?uid={uid}") as response:
-                    if response.status == 404:
-                        return await ctx.send(f" Player with UID `{uid}` not found.")
-                    if response.status != 200:
-                        return await ctx.send("API error. Try again later.")
-                    data = await response.json()
+                async with self.session.get(f"{self.api_url}?uid={uid}") as resp:
+                    if resp.status == 404:
+                        return await self._send_player_not_found(ctx, uid)
+                    if resp.status != 200:
+                        return await self._send_api_error(ctx)
+                    data = await resp.json()
 
-            basic_info = data.get('basicInfo', {})
-            captain_info = data.get('captainBasicInfo', {})
-            clan_info = data.get('clanBasicInfo', {})
-            credit_score_info = data.get('creditScoreInfo', {})
-            pet_info = data.get('petInfo', {})
-            profile_info = data.get('profileInfo', {})
-            social_info = data.get('socialInfo', {})
+            basic = data.get("basicInfo", {})
+            captain = data.get("captainBasicInfo", {})
+            clan = data.get("clanBasicInfo", {})
+            credit = data.get("creditScoreInfo", {})
+            pet = data.get("petInfo", {})
+            profile = data.get("profileInfo", {})
+            social = data.get("socialInfo", {})
 
-            region = basic_info.get('region', 'Not found')
+            theme_color = discord.Color.from_rgb(88, 101, 242)
 
-            embed = discord.Embed(
-                title=" Player Information",
-                color=discord.Color.blurple(),
+            # --- Embed 1: Basic Info
+            embed_basic = discord.Embed(
+                title=f"💎 Player — {basic.get('nickname', 'Unknown')}",
+                description=f"🔗 **JOIN : [JOIN NOW](https://discord.gg/RXSh8MpsZA)**",
+                color=theme_color,
                 timestamp=datetime.now()
             )
-            embed.set_thumbnail(url=ctx.author.display_avatar.url)
-
-            # 🔗 JOIN link উপরে
-            embed.add_field(
-                name="",
-                value="🔗 **JOIN : [JOIN NOW](https://discord.gg/RXSh8MpsZA)**",
+            embed_basic.set_thumbnail(url=ctx.author.display_avatar.url)
+            embed_basic.add_field(name="👤 Developer", value="**TANVIR**", inline=False)
+            embed_basic.add_field(
+                name="Account Basic Info",
+                value="\n".join([
+                    f"**• UID:** `{uid}`",
+                    f"**• Level:** {basic.get('level', '?')} (Exp: {basic.get('exp', '?')})",
+                    f"**• Region:** {basic.get('region', 'Unknown')}",
+                    f"**• Likes:** {basic.get('liked', '0')}",
+                    f"**• Honor Score:** {credit.get('creditScore', 'N/A')}",
+                    f"**• Signature:** {social.get('signature', 'None') or 'None'}"
+                ]),
                 inline=False
             )
 
-            embed.add_field(name="", value="\n".join([
-                "**┌ 👤 ACCOUNT BASIC INFO**",
-                f"**├─ Name**: {basic_info.get('nickname', 'Not found')}",
-                f"**├─ UID**: `{uid}`",
-                f"**├─ Level**: {basic_info.get('level', 'Not found')} (Exp: {basic_info.get('exp', '?')})",
-                f"**├─ Region**: {region}",
-                f"**├─ Likes**: {basic_info.get('liked', 'Not found')}",
-                f"**├─ Honor Score**: {credit_score_info.get('creditScore', 'Not found')}",
-                f"**└─ Signature**: {social_info.get('signature', 'None') or 'None'}"
-            ]), inline=False)
+            # --- Embed 2: Rank & Activity
+            embed_rank = discord.Embed(title="🎮 Rank & Activity", color=theme_color)
+            embed_rank.add_field(
+                name="Account Stats",
+                value="\n".join([
+                    f"**• BR Rank Points:** {basic.get('rankingPoints', '?')}",
+                    f"**• CS Rank Points:** {basic.get('csRankingPoints', '?')}",
+                    f"**• Badges:** {basic.get('badgeCnt', '0')}",
+                    f"**• Created:** {self.convert_unix_timestamp(basic.get('createAt', 0))}",
+                    f"**• Last Login:** {self.convert_unix_timestamp(basic.get('lastLoginAt', 0))}"
+                ]),
+                inline=False
+            )
 
-            embed.add_field(name="", value="\n".join([
-                "**┌ 🎮 ACCOUNT ACTIVITY**",
-                f"**├─ Most Recent OB**: {basic_info.get('releaseVersion', '?')}",
-                f"**├─ Current BP Badges**: {basic_info.get('badgeCnt', 'Not found')}",
-                f"**├─ BR Rank**: {'' if basic_info.get('showBrRank') else 'Not found'} {basic_info.get('rankingPoints', '?')}",
-                f"**├─ CS Rank**: {'' if basic_info.get('showCsRank') else 'Not found'} {basic_info.get('csRankingPoints', '?')} ",
-                f"**├─ Created At**: {self.convert_unix_timestamp(int(basic_info.get('createAt', '0')))}",
-                f"**└─ Last Login**: {self.convert_unix_timestamp(int(basic_info.get('lastLoginAt', '0')))}"
-            ]), inline=False)
+            # --- Embed 3: Profile & Pet
+            embed_profile = discord.Embed(title="🧥 Profile & Pet", color=theme_color)
+            embed_profile.add_field(
+                name="Profile Info",
+                value="\n".join([
+                    f"**• Avatar ID:** {profile.get('avatarId', 'N/A')}",
+                    f"**• Banner ID:** {basic.get('bannerId', 'N/A')}",
+                    f"**• Equipped Skills:** {profile.get('equipedSkills', 'N/A')}",
+                ]),
+                inline=False
+            )
+            embed_profile.add_field(
+                name="Pet Info",
+                value="\n".join([
+                    f"**• Pet Name:** {pet.get('name', 'N/A')}",
+                    f"**• Level:** {pet.get('level', 'N/A')} (Exp: {pet.get('exp', 'N/A')})",
+                    f"**• Equipped:** {'Yes' if pet.get('isSelected') else 'No'}"
+                ]),
+                inline=False
+            )
 
-            embed.add_field(name="", value="\n".join([
-                "**┌ 👕 ACCOUNT OVERVIEW**",
-                f"**├─ Avatar ID**: {profile_info.get('avatarId', 'Not found')}",
-                f"**├─ Banner ID**: {basic_info.get('bannerId', 'Not found')}",
-                f"**├─ Pin ID**: {captain_info.get('pinId', 'Not found') if captain_info else 'Default'}",
-                f"**└─ Equipped Skills**: {profile_info.get('equipedSkills', 'Not found')}"
-            ]), inline=False)
+            # --- Embed 4: Clan & Captain
+            embed_clan = discord.Embed(title="🛡️ Clan & Captain", color=theme_color)
+            if clan:
+                embed_clan.add_field(
+                    name="Guild Info",
+                    value="\n".join([
+                        f"**• Guild Name:** {clan.get('clanName', 'N/A')}",
+                        f"**• Guild ID:** `{clan.get('clanId', 'N/A')}`",
+                        f"**• Level:** {clan.get('clanLevel', 'N/A')}",
+                        f"**• Members:** {clan.get('memberNum', '?')}/{clan.get('capacity', '?')}"
+                    ]),
+                    inline=False
+                )
+            if captain:
+                embed_clan.add_field(
+                    name="Leader Info",
+                    value="\n".join([
+                        f"**• Name:** {captain.get('nickname', 'N/A')}",
+                        f"**• UID:** `{captain.get('accountId', 'N/A')}`",
+                        f"**• Level:** {captain.get('level', 'N/A')}",
+                        f"**• Rank Points:** {captain.get('rankingPoints', 'N/A')}",
+                        f"**• Badges:** {captain.get('badgeCnt', 'N/A')}"
+                    ]),
+                    inline=False
+                )
 
-            embed.add_field(name="", value="\n".join([
-                "**┌ 🐾 PET DETAILS**",
-                f"**├─ Equipped?**: {'Yes' if pet_info.get('isSelected') else 'Not Found'}",
-                f"**├─ Pet Name**: {pet_info.get('name', 'Not Found')}",
-                f"**├─ Pet Exp**: {pet_info.get('exp', 'Not Found')}",
-                f"**└─ Pet Level**: {pet_info.get('level', 'Not Found')}"
-            ]), inline=False)
+            # --- Embed 5: Profile Card & Outfit
+            embed_image = discord.Embed(title="🖼️ Profile Card", color=theme_color)
+            embed_image.set_image(url=f"https://profile.thug4ff.com/api/profile_card?uid={uid}")
 
-            if clan_info:
-                guild_info = [
-                    "**┌ 🛡️ GUILD INFO**",
-                    f"**├─ Guild Name**: {clan_info.get('clanName', 'Not found')}",
-                    f"**├─ Guild ID**: `{clan_info.get('clanId', 'Not found')}`",
-                    f"**├─ Guild Level**: {clan_info.get('clanLevel', 'Not found')}",
-                    f"**├─ Live Members**: {clan_info.get('memberNum', 'Not found')}/{clan_info.get('capacity', '?')}"
-                ]
-                if captain_info:
-                    guild_info.extend([
-                        "**└─ 👑 LEADER INFO**:",
-                        f"    **├─ Leader Name**: {captain_info.get('nickname', 'Not found')}",
-                        f"    **├─ Leader UID**: `{captain_info.get('accountId', 'Not found')}`",
-                        f"    **├─ Leader Level**: {captain_info.get('level', 'Not found')} (Exp: {captain_info.get('exp', '?')})",
-                        f"    **├─ Last Login**: {self.convert_unix_timestamp(int(captain_info.get('lastLoginAt', '0')))}",
-                        f"    **├─ Title**: {captain_info.get('title', 'Not found')}",
-                        f"    **├─ BP Badges**: {captain_info.get('badgeCnt', '?')}",
-                        f"    **├─ BR Rank**: {'' if captain_info.get('showBrRank') else 'Not found'} {captain_info.get('rankingPoints', 'Not found')}",
-                        f"    **└─ CS Rank**: {'' if captain_info.get('showCsRank') else 'Not found'} {captain_info.get('csRankingPoints', 'Not found')} "
-                    ])
-                embed.add_field(name="", value="\n".join(guild_info), inline=False)
-                
-            embed.set_image(url=f"https://profile.thug4ff.com/api/profile_card?uid={uid}")
-            embed.set_footer(text="🔗 DEVELOPED BY TANVIR")
-            await ctx.send(embed=embed)
+            embeds = [embed_basic, embed_rank, embed_profile, embed_clan, embed_image]
 
-            # ---- Outfit Image ----
+            # outfit image
+            outfit_filename = f"outfit_{uid}.png"
+            outfit_buf = None
             try:
-                image_url = f"{self.generate_url}?uid={uid}"
-                async with self.session.get(image_url) as img_file:
-                    if img_file.status == 200:
-                        with io.BytesIO(await img_file.read()) as buf:
-                            file = discord.File(buf, filename=f"outfit_{uuid.uuid4().hex[:8]}.png")
-                            await ctx.send(file=file)
-                            print("Outfit image sent successfully")
+                async with self.session.get(f"{self.generate_url}?uid={uid}") as imgr:
+                    if imgr.status == 200:
+                        outfit_bytes = await imgr.read()
+                        outfit_buf = io.BytesIO(outfit_bytes)
+                        embed_outfit = discord.Embed(title="🧾 Outfit Image", color=theme_color)
+                        embed_outfit.set_image(url=f"attachment://{outfit_filename}")
+                        embeds.append(embed_outfit)
             except Exception as e:
-                print("Outfit image failed:", e)
+                print("Outfit fetch error:", e)
+
+            if outfit_buf:
+                outfit_buf.seek(0)
+                discord_file = discord.File(fp=outfit_buf, filename=outfit_filename)
+                await ctx.send(embeds=embeds, file=discord_file)
+            else:
+                await ctx.send(embeds=embeds)
 
         except Exception as e:
-            await ctx.send(f" Unexpected error: `{e}`")
+            await ctx.send(f"❌ Unexpected error: `{e}`")
         finally:
             gc.collect()
-
-    async def cog_unload(self):
-        await self.session.close()
 
     async def _send_player_not_found(self, ctx, uid):
         embed = discord.Embed(
             title="❌ Player Not Found",
-            description=(f"UID `{uid}` not found or inaccessible.\n\n⚠️ **Note:** IND servers are currently not working."),
-            color=0xE74C3C
+            description=f"UID `{uid}` not found or inaccessible.",
+            color=discord.Color.red()
         )
-        embed.add_field(
-            name="Tip",
-            value="- Make sure the UID is correct\n- Try a different UID",
-            inline=False
-        )
-        await ctx.send(embed=embed, ephemeral=True)
+        await ctx.send(embed=embed)
 
     async def _send_api_error(self, ctx):
-        await ctx.send(embed=discord.Embed(
+        embed = discord.Embed(
             title="⚠️ API Error",
             description="The Free Fire API is not responding. Try again later.",
-            color=0xF39C12
-        ))
+            color=discord.Color.orange()
+        )
+        await ctx.send(embed=embed)
+
+    async def cog_unload(self):
+        await self.session.close()
 
 
 async def setup(bot):
