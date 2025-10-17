@@ -176,7 +176,7 @@ class InfoCommands(commands.Cog):
             social = data.get("socialInfo", {})
 
             embed = discord.Embed(
-                title=f"🎯 Player Info: {basic.get('nickname', 'Unknown')}",
+                title=f"🎯 PLAYER INFO: {basic.get('nickname', 'Unknown')}",
                 color=discord.Color.blurple(),
                 timestamp=datetime.now(),
             )
@@ -187,9 +187,8 @@ class InfoCommands(commands.Cog):
                 inline=False,
             )
 
-            # ---- Basic Info ----
             embed.add_field(
-                name="👤 Account Basic Info",
+                name="👤 ACCOUNT BASIC INFO",
                 value="\n".join([
                     f"**Name:** {basic.get('nickname', 'Unknown')}",
                     f"**UID:** `{uid}`",
@@ -202,9 +201,8 @@ class InfoCommands(commands.Cog):
                 inline=False,
             )
 
-            # ---- Activity ----
             embed.add_field(
-                name="🎮 Account Activity",
+                name="🎮 ACCOUNT ACTIVITY",
                 value="\n".join([
                     f"**Most Recent OB:** {basic.get('releaseVersion', '?')}",
                     f"**Current BP Badges:** {basic.get('badgeCnt', '?')}",
@@ -216,9 +214,8 @@ class InfoCommands(commands.Cog):
                 inline=False,
             )
 
-            # ---- Pet ----
             embed.add_field(
-                name="🐾 Pet Info",
+                name="🐾 PET INFO",
                 value="\n".join([
                     f"**Pet Name:** {pet.get('name', 'N/A')}",
                     f"**Level:** {pet.get('level', 'N/A')}",
@@ -228,7 +225,6 @@ class InfoCommands(commands.Cog):
                 inline=False,
             )
 
-            # ---- Guild ----
             if clan:
                 gtext = [
                     f"**Guild Name:** {clan.get('clanName', '?')}",
@@ -238,23 +234,42 @@ class InfoCommands(commands.Cog):
                 ]
                 if captain:
                     gtext.append(f"**Leader:** {captain.get('nickname', '?')} (UID: {captain.get('accountId', '?')})")
-                embed.add_field(name="🛡️ Guild Info", value="\n".join(gtext), inline=False)
+                embed.add_field(name="🛡️ GUILD INFO", value="\n".join(gtext), inline=False)
 
             embed.set_image(url=f"https://profile.thug4ff.com/api/profile_card?uid={uid}")
             embed.set_footer(text="🔗 Developed by Tanvir")
-
             await ctx.send(embed=embed)
 
             # ---- Outfit Image ----
             try:
                 img_url = f"{self.generate_url}?uid={uid}"
-                async with self.session.get(img_url, timeout=10) as img_resp:
+                async with self.session.get(img_url, timeout=15) as img_resp:
                     if img_resp.status == 200:
-                        img_data = await img_resp.read()
-                        file = discord.File(io.BytesIO(img_data), filename=f"outfit_{uuid.uuid4().hex}.png")
-                        await ctx.send(file=file)
+                        content_type = img_resp.headers.get("Content-Type", "")
+                        if "application/json" in content_type:
+                            data = await img_resp.json()
+                            image_link = data.get("image") or data.get("url")
+                            if image_link:
+                                async with self.session.get(image_link, timeout=15) as img_file:
+                                    if img_file.status == 200:
+                                        buf = io.BytesIO(await img_file.read())
+                                        file = discord.File(buf, filename=f"outfit_{uuid.uuid4().hex[:8]}.png")
+                                        await ctx.send(file=file)
+                                    else:
+                                        await ctx.send("⚠️ Outfit image link not responding.")
+                            else:
+                                await ctx.send("❌ Outfit image not found in API response.")
+                        elif "image" in content_type:
+                            buf = io.BytesIO(await img_resp.read())
+                            file = discord.File(buf, filename=f"outfit_{uuid.uuid4().hex[:8]}.png")
+                            await ctx.send(file=file)
+                        else:
+                            await ctx.send("❌ Unexpected API format for outfit image.")
+                    else:
+                        await ctx.send("⚠️ Outfit image API returned an error.")
             except Exception as e:
-                print(f"[Outfit Error] {e}")
+                print(f"[Outfit Image Error] {e}")
+                await ctx.send("⚠️ Failed to load outfit image. Try again later.")
 
         except asyncio.TimeoutError:
             await ctx.send("⏱️ Request timed out. Please try again later.")
@@ -263,7 +278,6 @@ class InfoCommands(commands.Cog):
         finally:
             gc.collect()
 
-    # ---------- HELPER EMBEDS ----------
     async def _send_player_not_found(self, ctx, uid):
         embed = discord.Embed(
             title="❌ Player Not Found",
